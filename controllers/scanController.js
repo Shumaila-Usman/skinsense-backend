@@ -37,12 +37,17 @@ const analyzeScan = async (req, res) => {
       return res.status(400).json({ message: 'Please upload a skin image.' });
     }
 
-    const imagePath = req.file.path;
+    const imagePath = req.file.path || null;   // null for memory storage
 
-    // Cloudinary returns a full URL; local disk returns a file path
-    const imageRelative = req.file.path?.startsWith('http')
-      ? req.file.path                              // Cloudinary URL
-      : '/uploads/scans/' + req.file.filename;     // local path
+    // Cloudinary → full URL | disk → relative path | memory → no persistent URL
+    let imageRelative;
+    if (req.file.path?.startsWith('http')) {
+      imageRelative = req.file.path;                      // Cloudinary URL
+    } else if (req.file.filename) {
+      imageRelative = '/uploads/scans/' + req.file.filename; // local disk
+    } else {
+      imageRelative = 'scan_memory.jpg';                  // memory fallback
+    }
 
     let detectedDisease, confidence;
 
@@ -55,7 +60,8 @@ const analyzeScan = async (req, res) => {
     } else {
       console.log(`🔬 Detecting disease (provider: ${process.env.SKIN_MODEL_PROVIDER || 'roboflow'})`);
       const service = getDetectionService();
-      const result  = await service.analyzeSkinImage(imagePath);
+      // Pass buffer for memory storage (Vercel), path for disk/Cloudinary
+      const result  = await service.analyzeSkinImage(imagePath, req.file.buffer || null);
       detectedDisease = result.detectedDisease;
       confidence      = result.confidence;
 

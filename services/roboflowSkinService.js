@@ -64,7 +64,7 @@ const extractTopPrediction = (responseData) => {
 };
 
 // ─── Main: analyze image via Roboflow ────────────────────────
-const analyzeSkinImage = async (imagePath) => {
+const analyzeSkinImage = async (imagePath, imageBuffer) => {
   const apiKey    = process.env.ROBOFLOW_API_KEY;
   const projectId = process.env.ROBOFLOW_PROJECT_ID || 'deep-derma-lmpy4';
   const version   = process.env.ROBOFLOW_VERSION    || '1';
@@ -76,12 +76,19 @@ const analyzeSkinImage = async (imagePath) => {
     );
   }
 
-  // Read image as base64
+  // Read image as base64 — from buffer (memory storage) or file path (disk storage)
   let imageBase64;
   try {
-    const buffer = fs.readFileSync(imagePath);
-    imageBase64  = buffer.toString('base64');
-    console.log(`📦 Image size: ${buffer.length} bytes`);
+    if (imageBuffer) {
+      // Memory storage: use buffer directly
+      imageBase64 = imageBuffer.toString('base64');
+      console.log(`📦 Image size (buffer): ${imageBuffer.length} bytes`);
+    } else {
+      // Disk storage: read from file path
+      const buffer = fs.readFileSync(imagePath);
+      imageBase64  = buffer.toString('base64');
+      console.log(`📦 Image size (disk): ${buffer.length} bytes`);
+    }
   } catch (err) {
     throw new Error('Could not read the uploaded image file.');
   }
