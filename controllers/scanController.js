@@ -37,8 +37,12 @@ const analyzeScan = async (req, res) => {
       return res.status(400).json({ message: 'Please upload a skin image.' });
     }
 
-    const imagePath     = req.file.path;
-    const imageRelative = '/uploads/scans/' + req.file.filename;
+    const imagePath = req.file.path;
+
+    // Cloudinary returns a full URL; local disk returns a file path
+    const imageRelative = req.file.path?.startsWith('http')
+      ? req.file.path                              // Cloudinary URL
+      : '/uploads/scans/' + req.file.filename;     // local path
 
     let detectedDisease, confidence;
 
